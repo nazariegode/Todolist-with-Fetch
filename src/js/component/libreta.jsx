@@ -1,11 +1,61 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
-// inicio de la funcion
+// componente
 const Todolist = () => {
-
-    // variables con hooks para actualizar el estado
+    //hooks
     const [tasks, setTasks] = useState([]);
     const [newTask, setNewTask] = useState('');
+
+    useEffect(() => {
+        user();
+/*         addTasks();
+ */    }, [])
+
+    //variable con fetch
+    const user = () => {
+        fetch('https://playground.4geeks.com/todo/users/nazariego', {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+            .then(resp => {
+                console.log(resp.ok);
+                console.log(resp.status);
+                return resp.json();
+            })
+            .then(data => {
+                console.log(data.todos);
+                setTasks(data.todos)
+            })
+            .catch(error => {
+                console.log(error);
+            });
+    }
+
+    /*     //variable con fetch
+        const addTasks = () => {
+            fetch('https://playground.4geeks.com/todo/users/nazariego', {
+                method: "PUT",
+                body: JSON.stringify(todos),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(resp => {
+                    console.log(resp.ok);
+                    console.log(resp.status);
+                    return resp.json();
+                })
+                .then(data => {
+                    console.log(data.todos);
+                    setTasks(data.todos)
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+        } */
+
 
     // funcion para actualizar la info del input 
     const handleInputChange = (e) => {
@@ -40,7 +90,7 @@ const Todolist = () => {
                 />
                 {tasks.map((task, index) => (
                     <li key={index} className="list-group-item d-flex justify-content-between">
-                        {task}
+                        {task.label}
                         <i
                             className="bi bi-x"
                             onClick={() => handleDeleteTask(index)}
