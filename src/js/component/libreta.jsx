@@ -1,80 +1,91 @@
 import React, { useEffect, useState } from "react";
 
-// componente
+// inicio de componente
 const Todolist = () => {
-    //hooks
+    // hooks
     const [tasks, setTasks] = useState([]);
     const [newTask, setNewTask] = useState('');
 
     useEffect(() => {
-        user();
-/*         addTasks();
- */    }, [])
+        fetchUserTasks();
+    }, []);
 
-    //variable con fetch
-    const user = () => {
+    // función para obtener las tareas del usuario
+    const fetchUserTasks = () => {
         fetch('https://playground.4geeks.com/todo/users/nazariego', {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
             }
         })
-            .then(resp => {
-                console.log(resp.ok);
-                console.log(resp.status);
-                return resp.json();
-            })
+            .then(resp => resp.json())
             .then(data => {
-                console.log(data.todos);
-                setTasks(data.todos)
+                setTasks(data.todos);
             })
             .catch(error => {
-                console.log(error);
+                console.error(error);
             });
     }
 
-    /*     //variable con fetch
-        const addTasks = () => {
-            fetch('https://playground.4geeks.com/todo/users/nazariego', {
-                method: "PUT",
-                body: JSON.stringify(todos),
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            })
-                .then(resp => {
-                    console.log(resp.ok);
-                    console.log(resp.status);
-                    return resp.json();
-                })
-                .then(data => {
-                    console.log(data.todos);
-                    setTasks(data.todos)
-                })
-                .catch(error => {
-                    console.log(error);
-                });
-        } */
-
-
-    // funcion para actualizar la info del input 
+    // función para actualizar la info del input 
     const handleInputChange = (e) => {
         setNewTask(e.target.value);
     };
 
-    // funcion para agregar una tarea a la listra
+    // función para agregar una tarea a la lista
     const handleAddTask = (e) => {
         if (e.key === 'Enter' && newTask.trim() !== '') {
-            setTasks([...tasks, newTask.trim()]);
-            setNewTask('');
+            const newTaskObj = { label: newTask.trim(), done: false };
+
+            fetch('https://playground.4geeks.com/todo/todos/nazariego', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(newTaskObj)
+            })
+                .then(resp => {
+                    if (resp.ok) {
+                        return resp.json();
+                    } else {
+                        throw new Error('Failed to add task');
+                    }
+                })
+                .then(data => {
+                    setTasks([...tasks, { ...newTaskObj, id: data.id }]);
+                    setNewTask('');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         }
     };
 
-    // funcion para eliminar una tarea de la lista
-    const handleDeleteTask = (index) => {
-        const newTasks = tasks.filter((_, taskIndex) => taskIndex !== index);
-        setTasks(newTasks);
+    // función para eliminar una tarea de la lista
+    const handleDeleteTask = (taskId) => {
+        const taskToDelete = tasks.find(task => task.id === taskId);
+        const resp = confirm(`Desea eliminar la tarea "${taskToDelete.label}"?`);
+        if (resp) {
+            fetch(`https://playground.4geeks.com/todo/todos/${taskId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        setTasks(tasks.filter(task => task.id !== taskId));
+                        alert('Tarea eliminada correctamente');
+                    } else {
+                        alert('Error al eliminar la tarea');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
     };
+
 
     // renderizado del componente listado
     return (
@@ -88,18 +99,17 @@ const Todolist = () => {
                     onKeyDown={handleAddTask}
                     placeholder="Insert here your new task ..."
                 />
-                {tasks.map((task, index) => (
-                    <li key={index} className="list-group-item d-flex justify-content-between">
+                {tasks.map((task) => (
+                    <li key={task.id} className="list-group-item d-flex justify-content-between">
                         {task.label}
                         <i
                             className="bi bi-x"
-                            onClick={() => handleDeleteTask(index)}
+                            onClick={() => handleDeleteTask(task.id)}
                             style={{ cursor: 'pointer' }}
                         ></i>
                     </li>
                 ))}
                 <li className="list-group-count">{tasks.length} tasks pending</li>
-                <button className="btn text-white">Delete all</button>
             </ul>
         </div>
     );
